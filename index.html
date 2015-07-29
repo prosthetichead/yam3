@@ -1,0 +1,110 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+	<title>yam3</title>
+	<script type="text/javascript" src="js/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+ var game = new Phaser.Game(640, 480, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render});
+
+function preload() {
+	//  This sets a limit on the up-scale
+    //game.scale.maxWidth = 800; 
+    //game.scale.maxHeight = 600;
+    
+    //Set Scaling Mode
+    //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+
+    //Load images
+	game.load.spritesheet('blocks', '/img/blocks.png', 32, 32); 
+}
+
+var seed = new Date().getTime(); //gets a seed using the time fuction
+var blockMap;
+var blockMapLayer;
+function create() {
+    var randomBlocks = new Phaser.RandomDataGenerator([seed]);
+
+    //setup our map to use for the blocks
+    blockMap = game.add.tilemap();
+    blockMap.addTilesetImage('blocks');
+    blockMapLayer = blockMap.create('blockMap', 10, 14, 32,32 );
+
+    for (y = 0; y < 14; y++) {
+        for (x = 0; x < 10; x++) {
+            blockMap.putTile(randomBlocks.integerInRange(0,4), x, y, 'blockMap');
+        }
+    }	
+	
+}
+
+var currentTile;
+function update() {
+    var mouseX = game.input.activePointer.worldX;
+    var mouseY = game.input.activePointer.worldY;
+
+    currentTile = blockMap.getTileWorldXY(mouseX, mouseY);
+}
+
+function render() {
+    game.debug.inputInfo(16, 16);
+    if (currentTile) {
+        game.debug.text('currentTile index: ' + currentTile.index, 16, 100);
+        game.debug.text('currentTile x: ' + currentTile.x, 16, 115);
+        game.debug.text('currentTile y: ' + currentTile.y, 16, 130);
+
+        game.debug.text('count matches X: ' + testTileForMatches(currentTile).matchedTilesX.length, 16, 150);
+        game.debug.text('count matches Y: ' + testTileForMatches(currentTile).matchedTilesY.length, 16, 170);
+        
+    }
+}
+
+//gets array of sounding tiles that match this one
+function testTileForMatches(originalTile) {
+    var matchedTiles = {matchedTilesY: [originalTile], matchedTilesX: [originalTile]};
+    var testTile;
+
+    for (i = 0; i < 4; ++i){
+        testTile = getAdjacentTile(originalTile, i);    
+        while(testTile && testTile.index == originalTile.index) {
+            if (i == 0 || i == 2)
+                matchedTiles.matchedTilesY.push(testTile);
+            else
+                matchedTiles.matchedTilesX.push(testTile);
+            
+            testTile = getAdjacentTile(testTile, i);
+        }
+    }
+
+    return matchedTiles;
+}
+
+
+
+function getAdjacentTile(tile, directionID) {
+    if (directionID == 0) 
+        return blockMap.getTileAbove(blockMap.getLayer(), tile.x, tile.y);
+    else if (directionID == 1)
+        return blockMap.getTileRight(blockMap.getLayer(), tile.x, tile.y);
+    else if (directionID == 2)
+        return blockMap.getTileBelow(blockMap.getLayer(), tile.x, tile.y);
+    else if (directionID == 3)
+        return blockMap.getTileLeft(blockMap.getLayer(), tile.x, tile.y);
+    else
+        return null;
+}
+
+
+</script>
+
+</body>
+</html>
