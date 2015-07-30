@@ -2,6 +2,7 @@
 <html lang="en"> 
 <head> 
 	<meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-store" />
 	<title>yam3</title>
 	<script type="text/javascript" src="js/phaser.js"></script>
     <style type="text/css">
@@ -43,8 +44,9 @@ function create() {
         for (x = 0; x < 10; x++) {
             blockMap.putTile(randomBlocks.integerInRange(0,4), x, y, 'blockMap');
         }
-    }	
-	
+    }
+    testAllTiles();
+
 }
 
 var currentTile;
@@ -53,6 +55,7 @@ function update() {
     var mouseY = game.input.activePointer.worldY;
 
     currentTile = blockMap.getTileWorldXY(mouseX, mouseY);
+    
 }
 
 function render() {
@@ -63,9 +66,32 @@ function render() {
         game.debug.text('currentTile y: ' + currentTile.y, 16, 130);
 
         game.debug.text('count matches X: ' + testTileForMatches(currentTile).matchedTilesX.length, 16, 150);
-        game.debug.text('count matches Y: ' + testTileForMatches(currentTile).matchedTilesY.length, 16, 170);
-        
+        game.debug.text('count matches Y: ' + testTileForMatches(currentTile).matchedTilesY.length, 16, 170); 
     }
+}
+
+//tests and removes any match 3s
+function testAllTiles() {
+    blockMap.forEach(function(tile){
+        if (tile.index != 5 ) {
+            var result = testTileForMatches(tile);
+            
+            if (result.matchedTilesX.length >= 3) {
+                for (var j = 0; j < result.matchedTilesX.length; ++j){
+                    var tile = result.matchedTilesX[j];
+                    tile.index = 5;
+                    blockMap.putTile(tile, tile.x, tile.y);
+                }
+            }
+            if (result.matchedTilesY.length >= 3) {
+                for (var j = 0; j < result.matchedTilesY.length; ++j){
+                    var tile = result.matchedTilesY[j];
+                    tile.index = 5;
+                    blockMap.putTile(tile, tile.x, tile.y);
+                }
+            }
+        }
+    });
 }
 
 //gets array of sounding tiles that match this one
