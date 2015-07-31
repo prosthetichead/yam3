@@ -32,9 +32,9 @@ function preload() {
 var seed = new Date().getTime(); //gets a seed using the time fuction
 var blockMap;
 var blockMapLayer;
-function create() {
-    var randomBlocks = new Phaser.RandomDataGenerator([seed]);
+var randomBlocks = new Phaser.RandomDataGenerator([seed]);
 
+function create() {
     //setup our map to use for the blocks
     blockMap = game.add.tilemap();
     blockMap.addTilesetImage('blocks');
@@ -46,7 +46,6 @@ function create() {
         }
     }
     testAllTiles();
-
 }
 
 var currentTile;
@@ -56,6 +55,8 @@ function update() {
 
     currentTile = blockMap.getTileWorldXY(mouseX, mouseY);
     
+    dropTiles();
+    testAllTiles();
 }
 
 function render() {
@@ -80,14 +81,12 @@ function testAllTiles() {
                 for (var j = 0; j < result.matchedTilesX.length; ++j){
                     var tile = result.matchedTilesX[j];
                     tile.index = 5;
-                    blockMap.putTile(tile, tile.x, tile.y);
                 }
             }
             if (result.matchedTilesY.length >= 3) {
                 for (var j = 0; j < result.matchedTilesY.length; ++j){
                     var tile = result.matchedTilesY[j];
                     tile.index = 5;
-                    blockMap.putTile(tile, tile.x, tile.y);
                 }
             }
         }
@@ -115,6 +114,20 @@ function testTileForMatches(originalTile) {
 }
 
 
+function dropTiles() {
+    blockMap.forEach(function(tile){
+        if (tile.index == 5) {
+            aboveTile = blockMap.getTileAbove(blockMap.getLayer(), tile.x, tile.y);
+            if (aboveTile){
+                tile.index = aboveTile.index;
+                aboveTile.index = 5;
+            }
+            else{
+                tile.index = randomBlocks.integerInRange(0,4);
+            }
+        }
+    });
+}
 
 function getAdjacentTile(tile, directionID) {
     if (directionID == 0) 
