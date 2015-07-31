@@ -49,14 +49,33 @@ function create() {
 }
 
 var currentTile;
+var movingTile;
+var bool_movingTile = false;
 function update() {
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
 
     currentTile = blockMap.getTileWorldXY(mouseX, mouseY);
     
-    dropTiles();
+
+    //Need to fix its clicking a billion times per updat but it kind of works. Need to use event handels
+    if (game.input.mousePointer.isDown)
+    {
+        if (bool_movingTile == true && (currentTile.index != movingTile.index)){
+            var currentIndex = currentTile.index;
+            var movingIndex = movingTile.index;
+            currentTile.index = movingIndex;
+            movingTile.index = currentIndex;
+            bool_movingTile = false;
+        }
+        else if (bool_movingTile == false && currentTile){
+            movingTile = currentTile;
+            bool_movingTile = true;
+        }
+    }
+
     testAllTiles();
+    dropTiles();
 }
 
 function render() {
@@ -65,10 +84,11 @@ function render() {
         game.debug.text('currentTile index: ' + currentTile.index, 16, 100);
         game.debug.text('currentTile x: ' + currentTile.x, 16, 115);
         game.debug.text('currentTile y: ' + currentTile.y, 16, 130);
-
-        game.debug.text('count matches X: ' + testTileForMatches(currentTile).matchedTilesX.length, 16, 150);
-        game.debug.text('count matches Y: ' + testTileForMatches(currentTile).matchedTilesY.length, 16, 170); 
+        if(movingTile){
+            game.debug.text('movingTile index: ' + movingTile.index, 16, 145);
+        }
     }
+    game.debug.text('bool_movingTile: ' + bool_movingTile, 16, 160);
 }
 
 //tests and removes any match 3s
@@ -109,7 +129,6 @@ function testTileForMatches(originalTile) {
             testTile = getAdjacentTile(testTile, i);
         }
     }
-
     return matchedTiles;
 }
 
