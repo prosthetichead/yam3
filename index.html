@@ -64,6 +64,10 @@ function create() {
             block.events.onDragStop.add(released);
 
             game.physics.arcade.enable(block);
+            //block.body.collideWorldBounds = true;
+            //block.body.velocity.y = 200;
+            //block.body.bounce.set(0.0);
+            block.body.setSize(blockSize/2, blockSize/2);
 
             blocksArray.push(block);
         }
@@ -78,11 +82,12 @@ function create() {
     //timer.loop(100, dropTiles, this); //ever 200mil seconds drop the blocks 
 }
 
-var originalBlockPos = {x: 0, y: 0};
+var currentBlockPos = {x: 0, y: 0};
+var currentSelectedBlock = null;
 function select(block){
-
-    originalBlockPos.x = block.x;
-    originalBlockPos.y = block.y;
+    currentSelectedBlock = block;
+    currentBlockPos.x = block.x;
+    currentBlockPos.y = block.y;
 
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
@@ -91,18 +96,37 @@ function select(block){
     block.y = mouseY;  
 }
 function released(block){
-    block.x = originalBlockPos.x;
-    block.y = originalBlockPos.y;
+    block.x = currentBlockPos.x;
+    block.y = currentBlockPos.y;
+}
+function blockOverlapOccur(block){
+    backupPos = {x: block.x, y: block.y};
+    block.x = currentBlockPos.x;
+    block.y = currentBlockPos.y;
+
+    currentBlockPos = backupPos;
+}
+
+function testBlockOverlap(callBack, block)
+{   
+    if(block){
+        for (var i = 0; i < blocksArray.length; ++i){
+            if (blocksArray[i] != block){
+                if (Phaser.Rectangle.intersects(block.getBounds(), blocksArray[i].getBounds()))
+                    callBack(blocksArray[i]);
+            }
+        }
+    }
+    return null;
 }
 
 function update() {
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
-
-    //currentTile = blockMap.getTileWorldXY(mouseX, mouseY);
-
-    //testAllTiles();
+    
+    testBlockOverlap(blockOverlapOccur, currentSelectedBlock);
 }
+
 
 function render() {
 
