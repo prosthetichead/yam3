@@ -98,6 +98,7 @@ function select(block){
 function released(block){
     block.x = currentSelectedBlockPos.x;
     block.y = currentSelectedBlockPos.y;
+    currentSelectedBlock = null;
 }
 function blockOverlapOccur(block){
     var backupPos = {x: block.x, y: block.y};
@@ -125,22 +126,67 @@ function testBlockOverlap(callBack, block)
     return false;
 }
 
+function testBlockMatches(){
+    for (var i = 0; i < blocksArray.length; ++i){
+        block = blocksArray[i];
+        topBlock = getAdjacentBlock(0, block);
+
+    }
+}
+
+function getAdjacentBlock(directionCode, block){
+    var index = blocksArray.indexOf(block);
+    var x = (index % blocksWide);
+    var y = parseInt((index / blocksWide));
+
+    if (directionCode == 0 && (y-1 >= 0)) {  //Up 
+        return blocksArray[( (y-1) * blocksWide) + x];
+    }
+    else if (directionCode == 1 && (x+1 < blocksWide)) { // Right
+        return blocksArray[(y * blocksWide) + (x+1)];
+    }
+    else if (directionCode == 2 && (y+1 < blocksHigh)) { //Down
+        return blocksArray[((y+1) * blocksWide) + (x)];
+    }
+    else if (directionCode == 3 && (x-1 >= 0)) { //Left
+        return blocksArray[(y * blocksWide) + (x-1)];
+    }
+    else {
+        return null;
+    }
+}
+
+//////
+// Phasers Update function Called every update
 function update() {
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
     
     testBlockOverlap(blockOverlapOccur, currentSelectedBlock);
+    testBlockMatches();
 }
 
-
+/////
+// Phasers Render fuction called every draw
 function render() {
     //draw frame IDs 
     for (var i = 0; i < blocksArray.length; ++i){
+
         game.debug.text(blocksArray.indexOf(blocksArray[i]), blocksArray[i].x+10, blocksArray[i].y+15, '#ffffff' ,'10px Courier');   
         game.debug.text(blocksArray[i].frame, blocksArray[i].x+28, blocksArray[i].y+35, '#ffffff' ,'14px Courier');     
+
+        if (currentSelectedBlock)
+        {
+            topBlock = getAdjacentBlock(0, currentSelectedBlock)
+            if(topBlock)
+                game.debug.text("TOP", topBlock.x+20, topBlock.y,  '#ffffff' ,'14px Courier');
+        }
     }
 }
 
+/////
+// Used to swap the array elements
+//
 function swapArrayElements(array_object, index_a, index_b) {
     var temp = array_object[index_a];
     array_object[index_a] = array_object[index_b];
