@@ -8,7 +8,10 @@
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
 <meta http-equiv="pragma" content="no-cache" />
 	<title>yam3</title>
-	<script type="text/javascript" src="js/phaser.js"></script>
+	
+    <script type="text/javascript" src="js/phaser.js"></script>
+    <script type="text/javascript" src="js/Block.js"></script>
+
     <style type="text/css">
         body {
             margin: 0;
@@ -22,16 +25,14 @@
     var game = new Phaser.Game(640, 480, Phaser.AUTO, '', { preload: preload, create: create, update: update, render: render});
     var blocksStartX = 20;
     var blocksStartY = 20;
-    var blockPadding = 2;
-    var blockSize = 32; 
+    var blockPadding = 5;
+    var blockSize = 64; 
     var blocksHigh = 5;
-    var blocksWide = 10;
+    var blocksWide = 6;
 
     var score = 0;
     var currentTile;
-    var blocksGroup; 
     var blocksArray = []; // blocksArray[(y * blocksWide) + x]
-
 
     var seed = new Date().getTime();
     var randomBlocks = new Phaser.RandomDataGenerator([seed]);
@@ -55,19 +56,16 @@ function create() {
     for (y = 0; y < blocksHigh; y++) {
         for (x = 0; x < blocksWide; x++) {
             //var block = game.add.sprite(, 'blocks', 1);
-            block = blocksGroup.create((x*(blockSize+blockPadding))+blocksStartX, (y*(blockSize+blockPadding))+blocksStartY, 'blocks', randomBlocks.integerInRange(0,4));
-         
+            //block = blocksGroup.create(, , 'blocks', );
+
+            block = new Phaser.Sprite(game, (x*(blockSize+blockPadding))+blocksStartX, (y*(blockSize+blockPadding))+blocksStartY, 'blocks', randomBlocks.integerInRange(1,5))
+            game.add.existing(block);
+
             // Enable input.
             block.inputEnabled = true;
             block.input.enableDrag();
             block.events.onDragStart.add(select);
             block.events.onDragStop.add(released);
-
-            game.physics.arcade.enable(block);
-            //block.body.collideWorldBounds = true;
-            //block.body.velocity.y = 200;
-            //block.body.bounce.set(0.0);
-            block.body.setSize(blockSize/2, blockSize/2);
 
             blocksArray.push(block);
         }
@@ -82,12 +80,14 @@ function create() {
     //timer.loop(100, dropTiles, this); //ever 200mil seconds drop the blocks 
 }
 
-var currentBlockPos = {x: 0, y: 0};
+var currentSelectedBlockPos = {x: 0, y: 0};
 var currentSelectedBlock = null;
 function select(block){
+   block.bringToTop();
+
     currentSelectedBlock = block;
-    currentBlockPos.x = block.x;
-    currentBlockPos.y = block.y;
+    currentSelectedBlockPos.x = block.x;
+    currentSelectedBlockPos.y = block.y;
 
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
@@ -96,28 +96,33 @@ function select(block){
     block.y = mouseY;  
 }
 function released(block){
-    block.x = currentBlockPos.x;
-    block.y = currentBlockPos.y;
+    block.x = currentSelectedBlockPos.x;
+    block.y = currentSelectedBlockPos.y;
 }
 function blockOverlapOccur(block){
-    backupPos = {x: block.x, y: block.y};
-    block.x = currentBlockPos.x;
-    block.y = currentBlockPos.y;
+    var backupPos = {x: block.x, y: block.y};
+    block.x = currentSelectedBlockPos.x;
+    block.y = currentSelectedBlockPos.y;
 
-    currentBlockPos = backupPos;
+    currentSelectedBlockPos = backupPos;
+    swapArrayElements(blocksArray, blocksArray.indexOf(block), blocksArray.indexOf(currentSelectedBlock));
 }
-
 function testBlockOverlap(callBack, block)
 {   
     if(block){
         for (var i = 0; i < blocksArray.length; ++i){
-            if (blocksArray[i] != block){
-                if (Phaser.Rectangle.intersects(block.getBounds(), blocksArray[i].getBounds()))
+
+            var testBlock = blocksArray[i];
+
+            if ((blocksArray[i] != block)){
+                var blockCircle = new Phaser.Circle(block.x + (block.width/2), block.y + (block.height/2), 32);
+                var testCircle = new Phaser.Circle(testBlock.x + (testBlock.width/2), testBlock.y + (testBlock.height/2), blockSize);
+                if (Phaser.Circle.intersects(blockCircle, testCircle))
                     callBack(blocksArray[i]);
             }
         }
     }
-    return null;
+    return false;
 }
 
 function update() {
@@ -129,10 +134,18 @@ function update() {
 
 
 function render() {
-
-    game.debug.text('Debug SCORE: ' + score, 16, 16);
-
+    //draw frame IDs 
+    for (var i = 0; i < blocksArray.length; ++i){
+        game.debug.text(blocksArray.indexOf(blocksArray[i]), blocksArray[i].x+10, blocksArray[i].y+15, '#ffffff' ,'10px Courier');   
+        game.debug.text(blocksArray[i].frame, blocksArray[i].x+28, blocksArray[i].y+35, '#ffffff' ,'14px Courier');     
+    }
 }
+
+function swapArrayElements(array_object, index_a, index_b) {
+    var temp = array_object[index_a];
+    array_object[index_a] = array_object[index_b];
+    array_object[index_b] = temp;
+ }
 
 
 </script>
