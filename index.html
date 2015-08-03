@@ -126,14 +126,54 @@ function testBlockOverlap(callBack, block)
     return false;
 }
 
-function testBlockMatches(){
+function testAllForMatches(){
     for (var i = 0; i < blocksArray.length; ++i){
-        block = blocksArray[i];
-        topBlock = getAdjacentBlock(0, block);
+        var block = blocksArray[i];
+        var matches = testBlockForMatches(block);
 
+        if (matches.horizonal.length >= 3) {
+            for (var j = 0; j < matches.horizonal.length; ++j)
+                matches.horizonal[j].frame = 0;
+        }
+        if (matches.vertical.length >= 3) {
+            for (var j = 0; j < matches.vertical.length; ++j)
+                matches.vertical[j].frame = 0;
+        }
     }
 }
 
+///////////
+// test a block for matches and return them in  
+// matches object
+function testBlockForMatches(block) {
+    var matches = {horizonal: [block], vertical: [block]};
+
+    for (var j = 0; j <= 3; ++j){
+        testBlock = getAdjacentBlock(j, block);
+        while (testBlock) {
+            if (testBlock.frame == block.frame){
+                if (j == 0 || j == 2) //Vertical Match
+                    matches.vertical.push(testBlock);
+                else
+                    matches.horizonal.push(testBlock);
+                //Get the next test block
+                testBlock = getAdjacentBlock(j, testBlock);
+            }
+            else {
+                //No Match break out
+                break;
+            }
+        }
+    }
+
+    return matches;
+}
+
+
+////////
+// get adjacent blocks based on a direction code.
+// 0 up. 1 right. 2 down. 3 left. 
+//
 function getAdjacentBlock(directionCode, block){
     var index = blocksArray.indexOf(block);
     var x = (index % blocksWide);
@@ -158,29 +198,26 @@ function getAdjacentBlock(directionCode, block){
 
 //////
 // Phasers Update function Called every update
+//
 function update() {
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
     
     testBlockOverlap(blockOverlapOccur, currentSelectedBlock);
-    testBlockMatches();
+    if (!currentSelectedBlock)
+        testAllForMatches();
 }
 
 /////
 // Phasers Render fuction called every draw
+//
 function render() {
     //draw frame IDs 
     for (var i = 0; i < blocksArray.length; ++i){
-
+        blocksArray[i].tint = 0xffffff;
         game.debug.text(blocksArray.indexOf(blocksArray[i]), blocksArray[i].x+10, blocksArray[i].y+15, '#ffffff' ,'10px Courier');   
         game.debug.text(blocksArray[i].frame, blocksArray[i].x+28, blocksArray[i].y+35, '#ffffff' ,'14px Courier');     
 
-        if (currentSelectedBlock)
-        {
-            topBlock = getAdjacentBlock(0, currentSelectedBlock)
-            if(topBlock)
-                game.debug.text("TOP", topBlock.x+20, topBlock.y,  '#ffffff' ,'14px Courier');
-        }
     }
 }
 
