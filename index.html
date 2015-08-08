@@ -9,7 +9,7 @@
 <meta http-equiv="pragma" content="no-cache" />
 	<title>yam3</title>
 	
-    <script type="text/javascript" src="js/phaser.js"></script>
+    <script type="text/javascript" src="js/phaser.min.js"></script>
     <script type="text/javascript" src="js/Block.js"></script>
 
     <style type="text/css">
@@ -58,7 +58,8 @@ function create() {
             //var block = game.add.sprite(, 'blocks', 1);
             //block = blocksGroup.create(, , 'blocks', );
 
-            block = new Phaser.Sprite(game, (x*(blockSize+blockPadding))+blocksStartX, (y*(blockSize+blockPadding))+blocksStartY, 'blocks', randomBlocks.integerInRange(1,5))
+            block = new Phaser.Sprite(game, (x*(blockSize+blockPadding))+blocksStartX, (y*(blockSize+blockPadding))+blocksStartY,
+                'blocks', randomBlocks.integerInRange(1,5))
             game.add.existing(block);
 
             // Enable input.
@@ -99,6 +100,8 @@ function released(block){
     block.x = currentSelectedBlockPos.x;
     block.y = currentSelectedBlockPos.y;
     currentSelectedBlock = null;
+    testAllForMatches();
+    testAllForDrops();
 }
 function blockOverlapOccur(block){
     var backupPos = {x: block.x, y: block.y};
@@ -169,6 +172,64 @@ function testBlockForMatches(block) {
     return matches;
 }
 
+function testAllForDrops() {
+    var emptyBlocks = true;
+    var tweens = [];
+
+    //Drop the remaing Blocks
+    for (x = 0; x < blocksWide; x++) {
+        for (y = blocksHigh-1; y >= 0 ; y--) {
+            //Look bottom to top for empty blocks and move any as low as posible
+            block = blocksArray[( y * blocksWide) + x];
+            if (block.frame != 0){
+                blockBelow = getAdjacentBlock(2, block);
+                var originalBlockPos = {x: block.x, y: block.y};
+                while(blockBelow && blockBelow.frame == 0){
+                    var blockPos = {x: block.x, y: block.y};
+                    var blockBelowPos = {x: blockBelow.x, y: blockBelow.y};
+                    swapArrayElements(blocksArray, blocksArray.indexOf(block), blocksArray.indexOf(blockBelow));
+                    blockBelow.x = blockPos.x;
+                    blockBelow.y = blockPos.y;
+                    block.x = blockBelowPos.x;
+                    block.y = blockBelowPos.y;
+                    
+                    blockBelow = getAdjacentBlock(2, block);
+                }
+                if (block.y != originalBlockPos.y) {
+                    block.inputEnabled = false;
+                    tween = game.add.tween(block).from( { y:  originalBlockPos.y}, 1000, Phaser.Easing.Bounce.Out, false);
+                    tween.onComplete.add(function(block){ 
+                            block.inputEnabled = true;
+                    });
+                    tweens.push(tween);
+                }
+            }
+        }
+    }
+
+    //set any empty blocks to a random frame and drop from a hight
+    for (x = 0; x < blocksWide; x++) {
+        for (y = blocksHigh-1; y >= 0 ; y--) {
+            block = blocksArray[( y * blocksWide) + x];
+            if (block.frame == 0){
+                block.frame = randomBlocks.integerInRange(1,5);
+                block.inputEnabled = false;
+                tween = game.add.tween(block).from( { y:  block.y - 200}, 2000, Phaser.Easing.Bounce.Out, false);
+                tween.onComplete.add(function(block){ 
+                    block.inputEnabled = true;
+                });
+                tweens.push(tween);
+            }
+
+        }
+    }
+
+    for (i = 0; i < tweens.length; i++){
+        tweens[i].start();
+    }
+}
+
+//var 
 
 ////////
 // get adjacent blocks based on a direction code.
@@ -203,9 +264,12 @@ function update() {
     var mouseX = game.input.activePointer.worldX;
     var mouseY = game.input.activePointer.worldY;
     
+    
     testBlockOverlap(blockOverlapOccur, currentSelectedBlock);
-    if (!currentSelectedBlock)
-        testAllForMatches();
+    
+
+    
+
 }
 
 /////
@@ -217,7 +281,7 @@ function render() {
         blocksArray[i].tint = 0xffffff;
         game.debug.text(blocksArray.indexOf(blocksArray[i]), blocksArray[i].x+10, blocksArray[i].y+15, '#ffffff' ,'10px Courier');   
         game.debug.text(blocksArray[i].frame, blocksArray[i].x+28, blocksArray[i].y+35, '#ffffff' ,'14px Courier');     
-
+        game.debug.text(i + ": " + blocksArray[i].x + ", " + blocksArray[i].y, 500, 15*i + 20);
     }
 }
 
