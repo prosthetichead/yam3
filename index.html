@@ -100,8 +100,6 @@ function released(block){
     block.x = currentSelectedBlockPos.x;
     block.y = currentSelectedBlockPos.y;
     currentSelectedBlock = null;
-    testAllForMatches();
-    testAllForDrops();
 }
 function blockOverlapOccur(block){
     var backupPos = {x: block.x, y: block.y};
@@ -130,18 +128,21 @@ function testBlockOverlap(callBack, block)
 }
 
 function testAllForMatches(){
-    for (var i = 0; i < blocksArray.length; ++i){
-        var block = blocksArray[i];
-        var matches = testBlockForMatches(block);
+    if(dropsCompleted){
+        for (var i = 0; i < blocksArray.length; ++i){
+            var block = blocksArray[i];
+            var matches = testBlockForMatches(block);
 
-        if (matches.horizonal.length >= 3) {
-            for (var j = 0; j < matches.horizonal.length; ++j)
-                matches.horizonal[j].frame = 0;
+            if (matches.horizonal.length >= 3) {
+                for (var j = 0; j < matches.horizonal.length; ++j)
+                    matches.horizonal[j].frame = 0;
+            }
+            if (matches.vertical.length >= 3) {
+                for (var j = 0; j < matches.vertical.length; ++j)
+                    matches.vertical[j].frame = 0;
+            }
         }
-        if (matches.vertical.length >= 3) {
-            for (var j = 0; j < matches.vertical.length; ++j)
-                matches.vertical[j].frame = 0;
-        }
+        testAllForDrops();
     }
 }
 
@@ -172,7 +173,9 @@ function testBlockForMatches(block) {
     return matches;
 }
 
+var dropsCompleted = true;
 function testAllForDrops() {
+    
     var emptyBlocks = true;
     var tweens = [];
 
@@ -197,6 +200,8 @@ function testAllForDrops() {
                 }
                 if (block.y != originalBlockPos.y) {
                     block.inputEnabled = false;
+
+                    dropsCompleted = false;
                     tween = game.add.tween(block).from( { y:  originalBlockPos.y}, 1000, Phaser.Easing.Bounce.Out, false);
                     tween.onComplete.add(function(block){ 
                             block.inputEnabled = true;
@@ -214,7 +219,9 @@ function testAllForDrops() {
             if (block.frame == 0){
                 block.frame = randomBlocks.integerInRange(1,5);
                 block.inputEnabled = false;
-                tween = game.add.tween(block).from( { y:  block.y - 200}, 2000, Phaser.Easing.Bounce.Out, false);
+                
+                dropsCompleted = false;
+                tween = game.add.tween(block).from( { y:  block.y - 200}, 1000, Phaser.Easing.Bounce.Out, false);
                 tween.onComplete.add(function(block){ 
                     block.inputEnabled = true;
                 });
@@ -224,8 +231,12 @@ function testAllForDrops() {
         }
     }
 
-    for (i = 0; i < tweens.length; i++){
-        tweens[i].start();
+    if (tweens.length > 0){
+        //Put a complete function on the final tween that will let other functions know Drops are completed at they can now run like normal
+        tweens[tweens.length-1].onComplete.add(function(){ dropsCompleted = true });
+        for (i = 0; i < tweens.length; i++){
+            tweens[i].start();
+        }
     }
 }
 
@@ -267,9 +278,9 @@ function update() {
     
     testBlockOverlap(blockOverlapOccur, currentSelectedBlock);
     
-
-    
-
+    if(!currentSelectedBlock){
+        testAllForMatches();
+    }
 }
 
 /////
@@ -283,6 +294,7 @@ function render() {
         game.debug.text(blocksArray[i].frame, blocksArray[i].x+28, blocksArray[i].y+35, '#ffffff' ,'14px Courier');     
         game.debug.text(i + ": " + blocksArray[i].x + ", " + blocksArray[i].y, 500, 15*i + 20);
     }
+    game.debug.text("drop run completed: " + dropsCompleted, 10, 375)
 }
 
 /////
