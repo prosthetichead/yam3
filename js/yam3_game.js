@@ -13,12 +13,15 @@ var game = new Phaser.Game(640 , 960, Phaser.AUTO, '', { preload: preload, creat
 
     var currentTile;
     var blocksArray = []; // blocksArray[(y * blocksWide) + x]
+    var timerBar;
+    var timerBar_cropRect;
 
     var seed = new Date().getTime();
     var randomGen = new Phaser.RandomDataGenerator([seed]);
 
+    //timers
     var attackTimer;
-    
+    var mainTimer;
 
     var currentPlayerStats = { HP: 100, DEF: 5, ATK: 3, LVL: 1}
     var currentEnemyStats = { HP: 30, DEF: 1, ATK: 5, LVL: 4, nextAttack: 1000}
@@ -35,15 +38,19 @@ function preload() {
   //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
   //Load images
   game.load.spritesheet('blocks', 'img/blocks.png', blockSize, blockSize); 
+  game.load.spritesheet('timerbar_1', 'img/timerbar_1.png', 500, 54);
+  game.load.spritesheet('timerbar_2', 'img/timerbar_2.png', 500, 54);
+  game.load.spritesheet('timerbar_3', 'img/timerbar_3.png', 500, 54);
+
 }
 
 function create() {
-
-    attackTimerBar = game.add.graphics(100, 100);
-    attackTimerBar.lineStyle(3, 0xffffff, 1);
-    attackTimerBar.beginFill(0x04407c, 1);
-    attackTimerBar.drawRoundedRect(50, 450, 300, 30, 6);
-    attackTimerBar.endFill();
+       
+    //setup timerBar
+    game.add.sprite( 0, 102, 'timerbar_3'); 
+    timerBar = game.add.sprite( 0, 102, 'timerbar_2');
+    game.add.sprite( 0, 102, 'timerbar_1');
+    timerBar_cropRect = new Phaser.Rectangle(0, 0, timerBar.width, timerBar.height); 
 
     //create Blocks
     for (y = 0; y < blocksHigh; y++) {
@@ -67,15 +74,22 @@ function create() {
 
     //create the timers
     attackTimer = game.time.create(false);
+    mainTimer = game.time.create(false);
     attackTimer.start();
-
-    console.log(game);
-    timerText = game.add.text(game.world.centerX, 400, "timer", {fill: "white"});
-    timerText.anchor.setTo(0.5, 0.5);
+    mainTimer.start();
 
     //setup first Attack timer event
     attackTimer.add(currentEnemyStats.nextAttack, enemyAttack, this);
+    mainTimer.loop(1000, adjustTimerBar, this);
+}
 
+
+
+function adjustTimerBar(){
+    var percent = ((currentEnemyStats.nextAttack - attackTimer.ms) / currentEnemyStats.nextAttack);
+    console.log(timerBar.width);
+    timerBar_cropRect.width = (percent*timerBar.width);
+    timerBar.crop(timerBar_cropRect);
 }
 
 function enemyAttack(){
@@ -86,9 +100,13 @@ function enemyAttack(){
     currentPlayerStats.HP = currentPlayerStats.HP - (currentEnemyStats.ATK + randomGen.integerInRange(1, 10)) ;
     currentEnemyStats.nextAttack = randomGen.integerInRange(5000, 10000);
 
+    //reset timer bar width
+    timerBar_cropRect.width = timerBar.width;
+
     attackTimer = game.time.create(false);
     attackTimer.add(currentEnemyStats.nextAttack, enemyAttack, this);
     attackTimer.start();
+
 }
 
 
@@ -115,7 +133,6 @@ function render() {
     game.debug.text("HP: " + currentPlayerStats.HP, 10, 375);
     game.debug.text("Time Till Next Attack: " + (currentEnemyStats.nextAttack - attackTimer.ms), 10, 400);   
 }
-
 
 
 
