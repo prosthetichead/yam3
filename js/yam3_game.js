@@ -14,8 +14,7 @@ var game = new Phaser.Game(640 , 960, Phaser.AUTO, '', { preload: preload, creat
     var currentTile;
     var blocksArray = []; // blocksArray[(y * blocksWide) + x]
     var timerBar;
-    var timerBar_cropRect;
-
+    
     var seed = new Date().getTime();
     var randomGen = new Phaser.RandomDataGenerator([seed]);
 
@@ -24,7 +23,7 @@ var game = new Phaser.Game(640 , 960, Phaser.AUTO, '', { preload: preload, creat
     var mainTimer;
 
     var currentPlayerStats = { HP: 100, DEF: 5, ATK: 3, LVL: 1}
-    var currentEnemyStats = { HP: 30, DEF: 1, ATK: 5, LVL: 4, nextAttack: 1000}
+    var currentEnemyStats = { HP: 30, DEF: 1, ATK: 5, LVL: 4, nextAttack: 10000}
    // var matchTextStyle = { font: "20px Helvetica", fill: "white", align: "center"};
 
     var currentSelectedBlockPos = {x: 0, y: 0};
@@ -35,7 +34,7 @@ var game = new Phaser.Game(640 , 960, Phaser.AUTO, '', { preload: preload, creat
 
 function preload() {
   // Set Scaling Mode
-  //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+  game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
   //Load images
   game.load.spritesheet('blocks', 'img/blocks.png', blockSize, blockSize); 
   game.load.spritesheet('timerbar_1', 'img/timerbar_1.png', 500, 54);
@@ -46,11 +45,8 @@ function preload() {
 
 function create() {
        
-    //setup timerBar
-    game.add.sprite( 0, 102, 'timerbar_3'); 
-    timerBar = game.add.sprite( 0, 102, 'timerbar_2');
-    game.add.sprite( 0, 102, 'timerbar_1');
-    timerBar_cropRect = new Phaser.Rectangle(0, 0, timerBar.width, timerBar.height); 
+    timerBar = new TimerBar(game, 0, 0);
+    game.add.existing(timerBar);
 
     //create Blocks
     for (y = 0; y < blocksHigh; y++) {
@@ -74,23 +70,14 @@ function create() {
 
     //create the timers
     attackTimer = game.time.create(false);
-    mainTimer = game.time.create(false);
-    attackTimer.start();
-    mainTimer.start();
 
     //setup first Attack timer event
     attackTimer.add(currentEnemyStats.nextAttack, enemyAttack, this);
-    mainTimer.loop(1000, adjustTimerBar, this);
+    timerBar.setNewTimer(currentEnemyStats.nextAttack);
+
+    attackTimer.start();
 }
 
-
-
-function adjustTimerBar(){
-    var percent = ((currentEnemyStats.nextAttack - attackTimer.ms) / currentEnemyStats.nextAttack);
-    console.log(timerBar.width);
-    timerBar_cropRect.width = (percent*timerBar.width);
-    timerBar.crop(timerBar_cropRect);
-}
 
 function enemyAttack(){
 
@@ -100,12 +87,10 @@ function enemyAttack(){
     currentPlayerStats.HP = currentPlayerStats.HP - (currentEnemyStats.ATK + randomGen.integerInRange(1, 10)) ;
     currentEnemyStats.nextAttack = randomGen.integerInRange(5000, 10000);
 
-    //reset timer bar width
-    timerBar_cropRect.width = timerBar.width;
-
     attackTimer = game.time.create(false);
     attackTimer.add(currentEnemyStats.nextAttack, enemyAttack, this);
     attackTimer.start();
+    timerBar.setNewTimer(currentEnemyStats.nextAttack);
 
 }
 
